@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Informe conectado a Supabase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Mantén tus estilos originales -->
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Informe dinámico con Supabase</h1>
+
+  <!-- Aquí se inyectarán los datos -->
+  <div id="contenido">
+    <p>Cargando datos desde Supabase...</p>
+  </div>
+
+  <!-- CAMBIO PRINCIPAL: conexión dinámica a Supabase -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // 🔧 Sustituye con tus credenciales
+    const SUPABASE_URL = 'https://TU_URL.supabase.co'
+    const SUPABASE_ANON_KEY = 'TU_ANON_KEY'
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    async function cargarDatos() {
+      // Cambia 'tabla_informe' por el nombre real de tu tabla
+      const { data, error } = await supabase.from('tabla_informe').select('*')
+
+      if (error) {
+        document.getElementById('contenido').innerHTML = `<p style="color:red;">Error: ${error.message}</p>`
+        console.error(error)
+      } else {
+        // Renderizar datos en tabla
+        let html = '<table><tr>'
+        for (const key in data[0]) {
+          html += `<th>${key}</th>`
+        }
+        html += '</tr>'
+
+        data.forEach(row => {
+          html += '<tr>'
+          for (const key in row) {
+            html += `<td>${row[key]}</td>`
+          }
+          html += '</tr>'
+        })
+
+        html += '</table>'
+        document.getElementById('contenido').innerHTML = html
+      }
+    }
+
+    cargarDatos()
+  </script>
+</body>
+</html>
