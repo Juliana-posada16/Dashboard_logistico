@@ -5688,46 +5688,69 @@ $newData = "const DATA = $dataJson;"
 # ============================================================
 # 6. ACTUALIZAR EL ARCHIVO HTML (con respaldo y validación)
 # ============================================================
-Write-Host ""
-Write-Host "📝 Actualizando archivo HTML..."
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Informe conectado a Supabase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Mantén tus estilos originales -->
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Informe dinámico con Supabase</h1>
 
-try {
-    $htmlContent = Get-Content -Path $OutputPath -Raw -Encoding UTF8
+  <!-- Aquí se inyectarán los datos -->
+  <div id="contenido">
+    <p>Cargando datos desde Supabase...</p>
+  </div>
 
-    $pattern = 'const DATA = \{[\s\S]*?\};'
-    if ($htmlContent -notmatch $pattern) {
-        throw "No se encontró el patrón 'const DATA = {...};' dentro del HTML. No se modificó el archivo."
+  <!-- CAMBIO PRINCIPAL: conexión dinámica a Supabase -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    // 🔧 Sustituye con tus credenciales
+    const SUPABASE_URL = 'https://TU_URL.supabase.co'
+    const SUPABASE_ANON_KEY = 'TU_ANON_KEY'
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    async function cargarDatos() {
+      // Cambia 'tabla_informe' por el nombre real de tu tabla
+      const { data, error } = await supabase.from('tabla_informe').select('*')
+
+      if (error) {
+        document.getElementById('contenido').innerHTML = `<p style="color:red;">Error: ${error.message}</p>`
+        console.error(error)
+      } else {
+        // Renderizar datos en tabla
+        let html = '<table><tr>'
+        for (const key in data[0]) {
+          html += `<th>${key}</th>`
+        }
+        html += '</tr>'
+
+        data.forEach(row => {
+          html += '<tr>'
+          for (const key in row) {
+            html += `<td>${row[key]}</td>`
+          }
+          html += '</tr>'
+        })
+
+        html += '</table>'
+        document.getElementById('contenido').innerHTML = html
+      }
     }
 
-    # Respaldo antes de escribir
-    $backupPath = "$OutputPath.bak"
-    Copy-Item -Path $OutputPath -Destination $backupPath -Force
-    Write-Host "   🗂️  Respaldo creado en: $backupPath"
-
-    $updatedHtml = $htmlContent -replace $pattern, [System.Text.RegularExpressions.Regex]::Escape($newData).Replace('\ ', ' ')
-    # Nota: usamos un reemplazo directo (no regex) para evitar que caracteres especiales
-    # dentro del JSON (como $ o \) sean interpretados por el motor de regex de -replace.
-    $updatedHtml = [System.Text.RegularExpressions.Regex]::Replace(
-        $htmlContent, $pattern, { param($m) $newData }
-    )
-
-    Set-Content -Path $OutputPath -Value $updatedHtml -Encoding UTF8
-
-    Write-Host "✅ Dashboard actualizado completamente!"
-}
-catch {
-    Write-Host "❌ Error actualizando el HTML: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "   El archivo original no fue modificado (o fue restaurado desde el respaldo)." -ForegroundColor Yellow
-    exit 1
-}
-
-Write-Host ""
-Write-Host "📊 Resumen:"
-Write-Host "   • Pedidos: $($pedidosTransformados.Count)"
-Write-Host "   • Inventario: $($inventarioTransformado.Count) productos"
-Write-Host "   • OTIF: $([math]::Round($kpis.otif_pct, 1))%"
-Write-Host "   • Con alerta: $($kpis.total_pedidos_con_alerta)"
-Write-Host "   • Retrasados: $($kpis.pedidos_con_retraso)"
-Write-Host "   • Generado con fecha real: $($hoy.ToString('yyyy-MM-dd'))"
-Write-Host ""
-Write-Host "✨ El dashboard contiene ahora los datos actuales de Supabase"
+    cargarDatos()
+  </script>
+</body>
+</html>
